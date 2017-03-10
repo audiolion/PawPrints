@@ -3,151 +3,219 @@
 <head>
     {% load static %}
     <meta charset="UTF-8">
+    <link href="{% static '/css/global.css' %}" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css?family=Maven+Pro|Work+Sans|Muli|Montserrat" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat|Raleway:300|Work+Sans:300" rel="stylesheet" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
     <script src="{% static '/js/global.js' %}"></script>
+    <script src="{% static '/js/jquery.waypoints.min.js' %}"></script>
     <style>
-        html, body{
-            margin: 0;
-            padding: 0;
-            background-color: #fcfcfc;
-            font-family: "Muli", Arial;
+        .background-highlight{
+            background-color: {{ colors.highlight }};
         }
-        .transition{
-            -webkit-transition: all 0.20s linear;
-            -moz-transition: all 0.20s linear;
-            -ms-transition: all 0.20s linear;
-            -o-transition: all 0.20s linear;
+        .text-highlight{
+            color: {{ colors.highlight }} !important;
         }
-        .material-icon-container{
-            display: inline-flex;
-            vertical-align: middle;
-            align-items: center;
+        .modern-link{
+            color: {{ colors.dark_text }};
+            text-decoration: none;
         }
-        h3{
-            font-family: "Work Sans", Arial;
-            font-weight: 400;
+        .material-input:focus{
+            border-color: {{ colors.highlight }};
         }
-        header{
-            background-color: #fff;
+        /* -- Global IDs -- */
+        #logo{
+            font-size: 2em;
         }
-        header nav{
-            width: 80%;
-            margin: 0 auto;
-        }
-        header nav ul{
-            display: block;
-            margin: 0;
-            padding: 0;
-        }
-        header nav ul li{
-            padding: 15px 12px;
-        }
-        header nav ul li i{
-            padding-right: 5px;
-        }
-        .right{
-            float: right;
-        }
-        .left{
-            float: left;
-        }
-        main{
-            width: 80%;
-            overflow: hidden;
-            margin: 20px auto 0;
-        }
-        aside{
-            margin-left: 15px;
-            padding-bottom: 15px;
-            width: calc(20% - 17px);
-            padding-left: 15px;
-            background-color: #fff;
-            border:1px solid #ccc;
-        }
-        aside nav{
-            width: calc(100% - 20px);
-        }
-        aside nav ul{
-            margin: 0;
-            padding: 0;
-            text-align: center;
-        }
-        aside nav ul li{
-            display: block;
-            padding: 10px 5px;
-            text-align: left;
-            width: calc(100% - 10px);
-        }
-        .tag{
-            display: inline-block;
-        }
+        /* -- Page-Specific Classes -- */
         .tag:hover{
-            background-color: #f5f5f5;
             cursor: pointer;
         }
         .current-tag{
-            background-color: #f36e21 !important;
-            color: #fff;
+            color: {{ colors.highlight }} !important;
         }
-        #petitions{
-            width: calc(75% + 15px);
-            margin-right: 0.5%;
-            -webkit-column-count: 3;
-            -webkit-column-gap: 15px;
-            -webkit-column-fill: auto;
-            -moz-column-count: 3;
-            -moz-column-gap: 15px;
-            -moz-column-fill: auto;
-            column-count: 3;
-            column-gap: 15px;
-            column-fill: auto;
-            height: auto;
+        /* -- Page-Specific IDs -- */
+        #tags-container{
+            background-color: #f5f5f5;
+            display: block;
             overflow: hidden;
+            text-align: center;
         }
-        #petitions article{
-            border: 1px solid #cfcfcf;
+        #tags{
+            padding: 10px 10px calc(10px + 0.75em);
+            text-align: center;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            background-color: #f5f5f5;
+        }
+        #tags .list-item{
             display: inline-block;
-            width: calc(100% - 35px);
-            padding: 15px;
-            height: auto;
-            margin-bottom: 15px;
-            background-color: #fff;
+            padding: 5px;
         }
-        #petitions article ul{
-            padding:0;
-            margin:0;
-        }
-        #petitions article h4{
-            margin:0;
-            padding-bottom: 1em;
-            font-weight: 400;
-        }
-        #petitions article h3{
-            margin: 0;
-            padding-bottom: 1em;
-        }
-        #petitions article a{
-            color: #f36e21;
-            text-decoration: none;
-        }
-        #petitions article a:hover{
-            text-decoration: underline;
-            color: #d5560c;
-        }
-        #petitions article .tag{
-            padding: 4px 6px;
-            margin: 3px 0px 0px 0px;
-            background-color: #f36e21;
+        #parallax-overlay{
+            text-align: center;
             color: #fff;
         }
-        #petitions article .tag:hover{
-            background-color: #d5560c !important;
+        #parallax-overlay h1{
+            font-family: "Montserrat",Arial;
+            text-transform: uppercase;
+            padding: 0.5em;
+            min-width: 45%;
+            margin: 0;
+            background-color: {{ colors.highlight }};
+            display: inline-block;
         }
-        @media screen and (max-width: 1100px){
-            main, header nav{
-                width: 95%;
+        #parallax-overlay h3{
+            line-height: 1.5em;
+        }
+        #sub-landing{
+            text-align: center;
+        }
+        #tiles{
+            position: relative;
+        }
+        #tile-background-parallax{
+            background-size:cover;
+            background: no-repeat center;
+            width: 100%;
+            height: 100%;
+        }
+        #search-tile label{
+            text-align: center;
+            display: block;
+        }
+        #search-tile label:hover{
+            cursor: pointer;
+        }
+        #search-term{
+            width: 0;
+            opacity:0;
+            padding:1px;
+        }
+        #search-term:focus{
+            opacity: 1;
+            width: auto;
+        }
+        #search-term:focus + span{
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+            display: none;
+        }
+        #empty-set{
+            margin-top: 0;
+            padding-top: 2em;
+            font-weight: 300;
+        }
+        /* - Petitions - */
+        #petitions{
+            background-color: #fcfcfc;
+            padding-bottom: 1em;
+        }
+        #petitions-container{
+            overflow: hidden;
+            -moz-column-count: 3;
+            -webkit-column-count:3;
+            column-count:3;
+            -moz-column-gap: 1em;
+            -webkit-column-gap: 1em;
+            column-gap: 1em;
+            width: calc(100% - 2em);
+            margin: 0 auto;
+        }
+        .petition{
+            background-color: #fff;
+            color: #0f0f0f;
+            padding: 1.2em;
+            width: calc(100% - 10px - 2.2em);
+            margin-left: 5px;
+            margin-right: 5px;
+            overflow: hidden;
+            display: inline-block;
+            margin-top: 1.2em;
+        }
+        .petition-signatures{
+            margin-top: 0;
+            padding-top: 0;
+            font-weight: 300;
+        }
+        .petition-title{
+            font-weight: 300;
+            font-family: "Raleway", Arial;
+        }
+        .petition ul{
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+        }
+        .petition .tag{
+            display: inline-block;
+            padding: 5px 7px;
+            margin: 5px 7px 0 0;
+            float: left;
+            background-color: {{ colors.highlight }};
+            color: {{ colors.bright_text }};
+        }
+        /* -- Slide Show Styles -- */
+        .slide {
+            height: 100%;
+        }
+        /* -- Tiles -- */
+        .tile-container{
+            overflow: hidden;
+            padding-top: 1em;
+            padding-bottom: 1em;
+        }
+        .tile{
+            line-height: 150px;
+            text-transform: uppercase;
+            font-size: 1.3em !important;
+            float: left;
+        }
+        .tile .material-icons{
+            font-size: 1.3em !important;
+        }
+        .three-tiles .tile{
+            width: calc(33.33% - 15px);
+            padding: 7px;
+            border-right: 1px solid #ccc;
+        }
+        .three-tiles .tile:first-child{
+            margin-left: 1px;
+        }
+        .three-tiles .tile:last-child{
+            border-right: none;
+        }
+        .tile:hover{
+            background-color: {{ colors.highlight }};
+            color: {{ colors.bright_text }};
+            cursor: pointer;
+        }
+        #search-tile:hover #search-term{
+            border-bottom-color: {{ colors.bright_text }} !important;
+        }
+        /* -- Responsiveness -- */
+        @media screen and (max-width: 900px){
+            #tiles{
+                padding: 0;
+            }
+            .tile{
+                width: calc(100% - 15px) !important;
+                line-height: 75px;
+                border-top: 1px solid #ccc;
+            }
+            #petitions-container{
+                -moz-column-count: 2;
+                -webkit-column-count:2;
+                column-count:2;
+            }
+        }
+        @media screen and (max-width: 600px){
+            #petitions-container{
+                -moz-column-count: 1;
+                -webkit-column-count:1;
+                column-count:1;
             }
         }
     </style>
@@ -155,91 +223,176 @@
 </head>
 <body>
 
-<header>
-    <nav>
-        <ul>
-            <li class="material-icon-container"><i class="material-icons">pets</i>PawPrints</li>
-            <li class="material-icon-container"><i class="material-icons">visibility</i>Recognised</li>
-            <li class="material-icon-container"><i class="material-icons">done</i>Responded</li>
-            <li class="material-icon-container"><i class="material-icons">info</i>About</li>
-            <li class="material-icon-container create_petition"><i class="material-icons">create</i>Create</li>
-            <li class="material-icon-container"><i class="material-icons">search</i>Search</li>
-            {% if user.first_name %}
-                <li class="material-icon-container right"><i class="material-icons">person</i>{{ user.first_name }}</li>
-            {% else %}
-                <li class="material-icon-container right"><i class="material-icons">person</i>Login</li>
-            {% endif %}
-        </ul>
-    </nav>
-</header>
-<main>
+{% include 'header.html' %}
 
-    <aside class="left">
-        <nav>
-            <h3>Sort By:</h3>
-            <select id="sort" data-filter="all">
-                <option value="most recent" selected="selected">Most Recent</option>
-                <option value="most signatures">Most Signatures</option>
-                <option value="last signed">Last Signed</option>
-            </select>
-            <h3>Tags:</h3>
-            <ul>
-                <li id="tag-all" class="tag current-tag">All</li>
+<main class="full-width">
+    <section id="landing" class="parallax-container">
+        <div id="parallax-slideshow" class="full-width">
+            <div class="slideshow-container">
+                <div id="c1" class="slide full-width" data-backgroundimage="{% static 'images/carousel_1.png' %}"></div>
+                <div id="c2" class="slide full-width" data-backgroundimage="{% static 'images/carousel_2.png' %}"></div>
+                <div id="c3" class="slide full-width" data-backgroundimage="{% static 'images/carousel_3.png' %}"></div>
+            </div>
+        </div>
+        <div id="parallax-overlay" class="full-width">
+            <h1>Make Your Mark</h1>
+            <h3>Create and vote on petitions.<br />Receive official responses from Student Government.</h3>
+        </div>
+    </section>
+    <section id="sub-landing">
+        <h1>Explore Petitions</h1>
+        <div id="tiles" class="tile-container full-width three-tiles">
+            <div id="recognised-tile" class="tile transition">
+                <span>in progress</span>
+            </div>
+            <div id="search-tile" class="tile transition">
+                <label for="search-term" class="full-width">
+                    <div class="material-icon-container">
+                        <i class="material-icons">search</i>
+                        <input id='search-term' class="material-input" type="text" />
+                        <span class="">Search</span>
+                    </div>
+                </label>
+            </div>
+            <div id="responded-tile" class="tile transition" onclick="window.location.href = 'petition/responded/'">
+                <span>responded</span>
+            </div>
+        </div>
+    </section>
+    <div id="tags-container">
+        <h3>Sort By:</h3>
+        <select id="sort" data-filter="all">
+            <option value="most recent" selected="selected">Most Recent</option>
+            <option value="most signatures">Most Signatures</option>
+            <option value="last signed">Last Signed</option>
+        </select>
+        <nav id="tags">
+            <h5>Tags:</h5>
+            <ul class="list full-width">
+                <li id="tag-all" class="list-item tag current-tag">All</li>
                 {% for tag in tags %}
-                    <li id="tag-{{ tag.id }}" class="tag transition">{{ tag.name }}</li>
+                    <li id="tag-{{ tag.id }}" class="list-item tag transition">{{ tag.name }}</li>
                 {% endfor %}
             </ul>
         </nav>
-    </aside>
-    <section id="petitions" class="right">
-        {% for petition in petitions %}
-            <article>
-                {% if petition.signatures == 1 %}
-                    <h4>{{ petition.signatures }} Signature</h4>
-                {% else %}
-                    <h4>{{ petition.signatures }} Signatures</h4>
-                {% endif %}
-                <h3><a href="/petition/{{ petition.id }}">{{ petition.title }}</a></h3>
+    </div>
+    <section id="petitions">
+        <div v-if="list.length > 0" id="petitions-container">
+            <!--      Vus.js template for listing petitions      -->
+            <article v-for="petition in list" class="petition material-shadow transition">
+                <h4 class="petition-signatures">
+                    {[ petition.signatures ]}
+                    <span v-if="petition.signatures == 1"> Signature</span>
+                    <span v-else> Signatures</span>
+                </h4>
+                <h3 class="petition-title"><a class="text-highlight modern-link" :data-petition-id="petition.id">{[ petition.title ]}</a></h3>
                 <ul>
-                    {% for tag in petition.tags.all %}
-                        <li id="petition_tag-{{ tag.id }}" class="tag">{{ tag.name }}</li>
-                    {% endfor %}
+                    <li v-for="tag in petition.tags" class="tag">{[ tag.name ]}</li>
                 </ul>
             </article>
-            </h1>
-        {% endfor %}
+            <!--      End Vue.js template      -->
+        </div>
     </section>
-
 </main>
+
 {% csrf_token %}
 </body>
 <script>
-    function reloadPetitions(sort_by, filter){
+    /* Initialize the Vue.js wrapper for the petitions.
+     *     el: the element to initialize on.
+     *   data:
+     *      - list: the list of petitions and all of their data
+     *      - map: the mapping of a petitions ID to its index in the list of petitions.
+     */
+    var petitions = new Vue({
+        el: "#petitions",
+        data: {
+            list: [],
+            map: {}
+        },
+        delimiters: ['{[', ']}']
+    });
+    function reloadPetitions(sort_by, filter, socket){
+        // load the petitions into the Vue instance.
         if($(".current-tag").attr("id") != filter){
             $(".current-tag").removeClass("current-tag");
         }
         $("#tag-"+filter).addClass("current-tag");
-        $.post("/petitions/",{"sort_by":sort_by,"filter":filter,"csrfmiddlewaretoken":get_csrf()},function(response){
-            $("#petitions").html(response);
+        socket.send('{"command":"list","sort":"'+sort_by+'","filter":"'+filter+'"}');
+    }
+    function initWaypoints(){
+        var tagsWaypoint = $('#tags').find("ul").waypoint(function(direction){
+            if(direction == "down"){
+                $("#tags").appendTo('header');
+                $("#tags-container").css({"padding-bottom":$("#tags").height()+100+"px"});
+            }
+            else{
+                $("#tags").appendTo('#tags-container');
+                $("#tags-container").removeAttr("style");
+            }
+        },{
+            offset: '10px'
         });
     }
+
     $(document).ready(function(){
+
+        // Setup Web Socket.
+        var socket = new WebSocket("ws://" + window.location.host + "/");
+        socket.onmessage = function(e) {
+
+            console.log(e.data);
+            // Get Escape special characters so JSON.parse works.
+            var data = e.data.replace(/%/gi,'\%').replace(/"/gi,'\"').replace(/&/gi,'\&');
+            try{
+
+                // Parse the response as a JSON.
+                data = JSON.parse(data);
+                if(data["command"]){
+                    if(data["command"] == "update-sigs"){
+
+                        petitions.list[petitions.map[data["id"]]].signatures = data["sigs"];
+
+                    }
+                }
+                else{
+                    petitions.list = data["petitions"];
+                    petitions.map = data["map"];
+                }
+
+            }
+            catch(error){
+                console.log("Error: "+error+". Data: "+data);
+                petitions.list = [];
+                petitions.map = {};
+            }
+
+        }
+
         $(document).on("click", ".tag", function(){
             var filter_tag = $(this).attr("id").replace("tag-","");
             filter_tag = filter_tag.replace("petition_","");
-            console.log(filter_tag);
             var sort_by = $("#sort").val();
             $("#sort").data("filter",filter_tag);
-            reloadPetitions(sort_by, filter_tag);
+            reloadPetitions(sort_by, filter_tag, socket);
         });
         $("#sort").change(function(){
             var filter_tag = $("#sort").data("filter");
             var sort_by = $(this).val();
-            reloadPetitions(sort_by, filter_tag);
+            reloadPetitions(sort_by, filter_tag, socket);
+        });
+        $("#parallax-slideshow").parallax({divisor:-2.5});
+        $("#parallax-overlay").parallax({divisor:-5,offset:40});
+        $(".slideshow-container").slideshow();
+        initWaypoints();
+        $("#is-logged-in").click(function(){
+
+
+
         });
     });
-    $(window).bind("load",function(){
-
+    $(window).resize(function(){
+        Waypoint.refreshAll();
     });
 </script>
 </html>

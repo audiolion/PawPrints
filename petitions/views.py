@@ -1,10 +1,12 @@
 """
 Author: Peter Zujko (@zujko)
+        Lukas Yelle (@lxy5611)
 Description: Handles views and endpoints for all petition related operations.
 Date Created: Sept 15 2016
-Updated: Oct 26 2016
+Updated: Feb 15 2017
 """
 from django.shortcuts import render, get_object_or_404, render, redirect
+from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import HttpResponse
@@ -12,9 +14,16 @@ from django.db.models import F
 from datetime import timedelta
 from petitions.models import Petition, Tag
 from django.utils import timezone
+from petitions.models import Petition
 from profile.models import Profile
 from django.contrib.auth.models import User
+from channels import Group, Channel
+from send_mail.tasks import *
+import json
 
+import logging
+
+logger = logging.getLogger("pawprints."+__name__)
 
 def index(request):
     """
@@ -25,6 +34,7 @@ def index(request):
 
     data_object = {
         'tags': Tag.objects.all,
+        'colors':colors(),
         'petitions': sorting_controller(sorting_key)
     }
 
@@ -46,14 +56,32 @@ def load_petitions(request):
     return render(request, 'list_petitions.html', data_object)
 
 
+def petition_responded(request):
+    """
+    Handles displaying all petitions with
+    :param request:
+    :return:
+    """
+    sorting_key = request.POST.get('sort_by', 'most recent')
+    filter_key = request.POST.get('filter', 'all')
+
+    data_object = {
+        'tags': Tag.objects.all,
+        'colors': colors(),
+        "petitions": responded(filtering_controller(Petition.objects.all(), filter_key))
+    }
+
+    return render(request, 'responded.html', data_object)
+
+
 def petition(request, petition_id):
-    """ Handles displaying A single petition. 
+    """ Handles displaying A single petition.
     DB queried to get Petition object and User objects.
     User object queries retrieve author
     and list of all users who signed the petition.
     """
     # Get petition of given id, if not found, display 404
-    petition = get_object_or_404(Petition, pk=petition_id) 
+    petition = get_object_or_404(Petition, pk=petition_id)
     # Get author of the petition
     author = User.objects.get(pk=petition.author.id)
     user = request.user
@@ -68,6 +96,7 @@ def petition(request, petition_id):
     # Get all of the current tags in pawprints.
     additional_tags = Tag.objects.all().exclude(name__in=[x.name for x in petition.tags.all()])
 
+
     # Generate the placeholders for the petition's page.
     # Note: 'edit' is how the system determines if the current user has the permission to edit a petition or not.
     data_object = {
@@ -77,7 +106,8 @@ def petition(request, petition_id):
         'current_user_signed': curr_user_signed,
         'users_signed': users_signed,
         'additional_tags': additional_tags,
-        'edit': edit_check(user, petition)
+        'edit': edit_check(user, petition),
+        'colors':colors()
     }
 
     return render(request, 'petition.html', data_object)
@@ -111,6 +141,8 @@ def petition_create(request):
     new_petition.last_signed = timezone.now()
     new_petition.signatures = F('signatures')+1
     new_petition.save()
+
+    logger.info("user "+user.email +" created a new petion called "+new_petition.title+" ID: "+str(new_petition.id))
 
     # Return the petition's ID to be used to redirect the user to the new petition.
     return HttpResponse(str(petition_id))
@@ -151,6 +183,8 @@ def petition_edit(request, petition_id):
 
         petition.save()
 
+        logger.info('user '+request.user.email+' edited petition '+petition.title+" ID: "+str(petition.id))
+
     return redirect('/petition/' + str(petition_id))
 
 
@@ -167,13 +201,31 @@ def petition_sign(request, petition_id):
           This will allow AJAX to interface with the view better.
     """
     petition = get_object_or_404(Petition, pk=petition_id)
+    # If the petition is still active
     if petition.status != 2:
         user = request.user
         user.profile.petitions_signed.add(petition)
         user.save()
-        petition.signatures = F('signatures')+1
+        petition.signatures += 1
         petition.last_signed = timezone.now()
         petition.save()
+
+        data = {
+            "command":"update-sigs",
+            "sigs":petition.signatures,
+            "id":petition.id
+        }
+
+        Group("petitions").send({
+            "text": json.dumps(data)
+        })
+        logger.info('user '+request.user.email+' signed petition '+petition.title+', which now has '+str(petition.signatures)+' signatures')
+
+	# Check if petition reached 200 if so, email.
+        if petition.signatures == 200:
+            petition_reached.delay(petition.id, request.META['HTTP_HOST'])
+            logger.info('petition '+petition.title+' hit 200 signatures \n'+"ID: "+str(petition.id))
+
     return HttpResponse(str(petition.id))
 
 @login_required
@@ -184,7 +236,18 @@ def petition_subscribe(request, petition_id):
     user = request.user
     user.profile.subscriptions.add(petition)
     user.save()
-    
+
+    return redirect('petition/' + str(petition_id))
+
+@login_required
+@require_POST
+def petition_unsubscribe(request, petition_id):
+    """ Endpoint unsubscribes a user to the petition"""
+    petition = get_object_or_404(Petition, pk=petition_id)
+    user = request.user
+    user.profile.subscriptions.remove(petition)
+    user.save()
+
     return redirect('petition/' + str(petition_id))
 
 @login_required
@@ -193,17 +256,30 @@ def petition_subscribe(request, petition_id):
 def petition_unpublish(request, petition_id):
     """ Endpoint for unpublishing a petition.
     This endpoint requires that the user be signed in,
-    the HTTP request method is a POST, and that the 
+    the HTTP request method is a POST, and that the
     user is an admin.
     """
     petition = get_object_or_404(Petition, pk=petition_id)
     # Set status to 2 to hide it from view.
     petition.status = 2
     petition.save()
-
+    logger.info('user '+request.user.email+' unpublished petition '+petition.title)
     return HttpResponse(True)
 
 # HELPER FUNCTIONS #
+def colors():
+
+    color_object = {
+        'highlight':"#f36e21",
+        'dark_text':'#0f0f0f',
+        'light_text':'#f0f0f0',
+        'bright_text':'#fff',
+        'light_background':'#fafafa'
+    }
+
+    return color_object
+
+
 def edit_check(user, petition):
     """
     Logic to determine if the user should be able to edit the petition
@@ -249,7 +325,12 @@ def filtering_controller(sorted_objects, tag):
     if tag == "all":
         return sorted_objects
     else:
-        return sorted_objects.all().filter(tags__in=tag)
+        queried_tag = Tag.objects.get(id=tag)
+        return sorted_objects.all().filter(tags=tag)
+
+
+def responded(sorted_objects):
+    return sorted_objects.all().filter(has_response=True)
 
 
 # SORTING
